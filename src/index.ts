@@ -20,6 +20,12 @@ fastify.get('/', async (request, reply) => {
 	return { hello: 'world' }
 })
 
+fastify.get('/posts/:id', async (request, reply) => {
+	return reply.code(200).send({
+		data: [],
+	})
+})
+
 fastify.listen({ port: 3000 }, (err, address) => {
 	if (err) throw err
 	// Server is now listening on ${address}
