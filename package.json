@@ -9,15 +9,17 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc -b --verbose",
     "dev": "tsc -w & nodemon -w dist dist/server.js",
-    "start": "node dist/index.js"
+    "start": "NODE_ENV=production node dist/index.js"
   },
   "devDependencies": {
+    "@types/node": "^20.3.1",
     "@typescript-eslint/eslint-plugin": "^5.59.11",
     "@typescript-eslint/parser": "^5.59.11",
     "eslint": "^8.43.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-prettier": "^4.2.1",
     "nodemon": "^2.0.22",
+    "pino-pretty": "^10.0.0",
     "prettier": "2.8.8",
     "typescript": "^5.1.3"
   },

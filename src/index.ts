@@ -1,7 +1,18 @@
 import Fastify from 'fastify'
 
 const fastify = Fastify({
-	logger: true,
+	logger:
+		process.env.NODE_ENV === 'production'
+			? true
+			: {
+				transport: {
+					target: 'pino-pretty',
+					options: {
+						translateTime: 'SYS:standard',
+						ignore: 'pid,hostname',
+					},
+				},
+			},
 })
 
 fastify.get('/', async (request, reply) => {
