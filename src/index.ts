@@ -20,9 +20,34 @@ fastify.get('/', async (request, reply) => {
 	return { hello: 'world' }
 })
 
+type Post = {
+	id: number
+	message: string
+}
+
+let currId = 1
+const data: Post[] = [{ id: currId, message: 'test data' }]
+
+fastify.get('/posts', async (request, reply) => {
+	return reply.code(200).send({
+		data,
+	})
+})
+
 fastify.get('/posts/:id', async (request, reply) => {
 	return reply.code(200).send({
-		data: [],
+		data,
+	})
+})
+
+fastify.post('/posts', async (request, reply) => {
+	data.push({
+		id: ++currId,
+		message: (request.body as { message: string }).message,
+	})
+
+	return reply.code(201).send({
+		data: data[data.length - 1],
 	})
 })
 
