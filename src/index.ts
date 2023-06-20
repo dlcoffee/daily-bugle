@@ -1,4 +1,10 @@
 import Fastify from 'fastify'
+import { serializerCompiler, validatorCompiler, ZodTypeProvider } from 'fastify-type-provider-zod'
+import z from 'zod'
+import { eq } from 'drizzle-orm'
+
+import { db } from './db'
+import { posts } from './db/schema'
 
 const fastify = Fastify({
 	logger:
@@ -15,41 +21,66 @@ const fastify = Fastify({
 			},
 })
 
+// Add schema validator and serializer
+fastify.setValidatorCompiler(validatorCompiler)
+fastify.setSerializerCompiler(serializerCompiler)
+
 fastify.get('/', async (_request, reply) => {
 	reply.type('application/json').code(200)
 	return { hello: 'world' }
 })
 
-type Post = {
-	id: number
-	message: string
-}
-
-let currId = 1
-const data: Post[] = [{ id: currId, message: 'test data' }]
-
 fastify.get('/posts', async (_request, reply) => {
-	return reply.code(200).send({
-		data,
-	})
+	const results = db.select().from(posts).all()
+
+	return reply.code(200).send(results)
 })
 
-fastify.get('/posts/:id', async (_request, reply) => {
-	return reply.code(200).send({
-		data,
-	})
-})
+fastify.withTypeProvider<ZodTypeProvider>().get(
+	'/posts/:id',
+	{
+		schema: {
+			params: z.object({
+				id: z.string(),
+			}),
+		},
+	},
+	async (request, reply) => {
+		const result = db
+			.select()
+			.from(posts)
+			.where(eq(posts.id, Number(request.params.id)))
+			.get()
 
-fastify.post('/posts', async (request, reply) => {
-	data.push({
-		id: ++currId,
-		message: (request.body as { message: string }).message,
-	})
+		if (result) {
+			return reply.code(200).send(result)
+		}
 
-	return reply.code(201).send({
-		data: data[data.length - 1],
-	})
-})
+		return reply.code(404).send({})
+	}
+)
+
+fastify.withTypeProvider<ZodTypeProvider>().post(
+	'/posts',
+	{
+		schema: {
+			body: z.object({
+				message: z.string(),
+			}),
+		},
+	},
+	async (request, reply) => {
+		const results = db
+			.insert(posts)
+			.values({
+				message: request.body.message,
+			})
+			.returning()
+			.all()
+
+		return reply.code(201).send(results[0])
+	}
+)
 
 fastify.listen({ port: 3000 }, (err, _address) => {
 	if (err) throw err

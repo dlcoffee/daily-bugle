@@ -6,6 +6,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "noEmit": false,
+    "strict": true,
     "baseUrl": "."
   },
   "exclude": ["node_modules", "dist"]
