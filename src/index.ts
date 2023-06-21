@@ -1,10 +1,8 @@
 import Fastify from 'fastify'
 import { serializerCompiler, validatorCompiler, ZodTypeProvider } from 'fastify-type-provider-zod'
 import z from 'zod'
-import { eq } from 'drizzle-orm'
 
-import { db } from './db'
-import { posts } from './db/schema'
+import { create, findAll, findById } from './posts/service'
 
 const fastify = Fastify({
 	logger:
@@ -31,7 +29,7 @@ fastify.get('/', async (_request, reply) => {
 })
 
 fastify.get('/posts', async (_request, reply) => {
-	const results = db.select().from(posts).all()
+	const results = findAll()
 
 	return reply.code(200).send(results)
 })
@@ -46,11 +44,7 @@ fastify.withTypeProvider<ZodTypeProvider>().get(
 		},
 	},
 	async (request, reply) => {
-		const result = db
-			.select()
-			.from(posts)
-			.where(eq(posts.id, Number(request.params.id)))
-			.get()
+		const result = findById(Number(request.params.id))
 
 		if (result) {
 			return reply.code(200).send(result)
@@ -70,15 +64,8 @@ fastify.withTypeProvider<ZodTypeProvider>().post(
 		},
 	},
 	async (request, reply) => {
-		const results = db
-			.insert(posts)
-			.values({
-				message: request.body.message,
-			})
-			.returning()
-			.all()
-
-		return reply.code(201).send(results[0])
+		const result = create({ message: request.body.message })
+		return reply.code(201).send(result)
 	}
 )
 
