@@ -2,8 +2,8 @@ import Fastify from 'fastify'
 import { serializerCompiler, validatorCompiler, ZodTypeProvider } from 'fastify-type-provider-zod'
 import z from 'zod'
 
-import * as postService from './posts/service'
-import * as userService from './users/service'
+import { findPostById, findAllPosts, createPost } from './posts/service'
+import { findUserById, findAllUsers, createUser } from './users/service'
 
 const fastify = Fastify({
 	logger:
@@ -30,7 +30,7 @@ fastify.get('/', async (_request, reply) => {
 })
 
 fastify.get('/users', async (_request, reply) => {
-	const results = userService.findAll()
+	const results = findAllUsers()
 
 	return reply.code(200).send(results)
 })
@@ -45,7 +45,7 @@ fastify.withTypeProvider<ZodTypeProvider>().get(
 		},
 	},
 	async (request, reply) => {
-		const result = userService.findById(Number(request.params.id))
+		const result = findUserById(Number(request.params.id))
 
 		if (result) {
 			return reply.code(200).send(result)
@@ -66,13 +66,13 @@ fastify.withTypeProvider<ZodTypeProvider>().post(
 		},
 	},
 	async (request, reply) => {
-		const result = await userService.create({ username: request.body.username, password: request.body.username })
+		const result = await createUser({ username: request.body.username, password: request.body.username })
 		return reply.code(201).send(result)
 	}
 )
 
 fastify.get('/posts', async (_request, reply) => {
-	const results = postService.findAll()
+	const results = findAllPosts()
 
 	return reply.code(200).send(results)
 })
@@ -87,7 +87,7 @@ fastify.withTypeProvider<ZodTypeProvider>().get(
 		},
 	},
 	async (request, reply) => {
-		const result = postService.findById(Number(request.params.id))
+		const result = findPostById(Number(request.params.id))
 
 		if (result) {
 			return reply.code(200).send(result)
@@ -107,7 +107,7 @@ fastify.withTypeProvider<ZodTypeProvider>().post(
 		},
 	},
 	async (request, reply) => {
-		const result = postService.create({ message: request.body.message })
+		const result = createPost({ message: request.body.message })
 		return reply.code(201).send(result)
 	}
 )
