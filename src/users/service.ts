@@ -14,5 +14,6 @@ export function findAll() {
 type NewUser = InferModel<typeof users, 'insert'>
 
 export function create(values: NewUser) {
+	// note: return value is `values`, not a freshly pulled record (timestamps wont be returned)
 	return db.insert(users).values(values).returning().get()
 }

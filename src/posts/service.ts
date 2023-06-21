@@ -14,5 +14,6 @@ export function findAll() {
 type NewPost = InferModel<typeof posts, 'insert'>
 
 export function create(values: NewPost) {
+  // note: return value is `values`, not a freshly pulled record (timestamps wont be returned)
   return db.insert(posts).values(values).returning().get()
 }
