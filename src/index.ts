@@ -61,11 +61,12 @@ fastify.withTypeProvider<ZodTypeProvider>().post(
 		schema: {
 			body: z.object({
 				username: z.string(),
+				password: z.string(),
 			}),
 		},
 	},
 	async (request, reply) => {
-		const result = userService.create({ username: request.body.username })
+		const result = await userService.create({ username: request.body.username, password: request.body.username })
 		return reply.code(201).send(result)
 	}
 )
