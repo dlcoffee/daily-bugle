@@ -11,7 +11,8 @@
     "start": "NODE_ENV=production node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "db:generate": "drizzle-kit generate:sqlite",
-    "db:push": "drizzle-kit push:sqlite"
+    "db:push": "drizzle-kit push:sqlite",
+    "db:seed": "npm run build && node dist/src/db/seed"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.4",

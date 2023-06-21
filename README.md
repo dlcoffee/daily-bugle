@@ -14,8 +14,24 @@ testing out authorization. it'll most likely be API-only. may set up tests if i'
 ```
 src/ # source code (typescript)
   db/ # database configuration
-	index.ts # server config
+  index.ts # server config
 migrations/ # drizzle-kit generated migration files
+```
+
+## how to run
+
+```bash
+npm install
+
+## tbd: create the migrations
+npm run db:migrate
+
+## alternatively, just push
+# npm run db:push
+
+## generate fake data for messing around
+npm run db:seed
+
 ```
 
 ### drizzle-orm
