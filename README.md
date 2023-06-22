@@ -7,7 +7,7 @@ testing out authorization. it'll most likely be API-only. may set up tests if i'
 - [fastify](https://github.com/fastify/fastify) - web framework. something other than express
 - [drizzle-orm](https://github.com/drizzle-team/drizzle-orm) - trying the new kid on the block
 - [casl](https://github.com/stalniy/casl) - js authz library. this may change depending on what library i want to test
-- [fastify-type-provider-zod](https://github.com/turkerdev/fastify-type-provider-zod) - didn't want to deal with json schema
+- [zod-to-json-schema](https://github.com/StefanTerdell/zod-to-json-schema) - didnt wanna deal with weird plugin stuff with fastify
 
 ## folder structure
 
@@ -60,6 +60,6 @@ npm run db:push
 looks like because migrations are in sql, there's no worry about whether the migration is typescript
 javascript.
 
-### fastify-type-provider-zod
+### zod-to-json-schema
 
-didn't want to use (learn) json schema.
+didn't want to deal with weird plugin stuff with fastify

@@ -1,118 +1,167 @@
-import Fastify from 'fastify'
-import { serializerCompiler, validatorCompiler, ZodTypeProvider } from 'fastify-type-provider-zod'
-import z from 'zod'
+import Fastify, { FastifyRequest, FastifyReply } from 'fastify'
+import fastifyAuth, { FastifyAuthFunction } from '@fastify/auth'
+import * as argon2 from 'argon2'
 
 import { findPostById, findAllPosts, createPost } from './posts/service'
-import { findUserById, findAllUsers, createUser } from './users/service'
+import { findUserByUsername, findUserById, findAllUsers, createUser } from './users/service'
+
+import {
+  getUserByIdJsonSchema,
+  createUserJsonSchema,
+  type CreateUserBody,
+  type GetUserByIdParams,
+} from './users/schemas'
+
+import {
+  getPostByIdJsonSchema,
+  createPostJsonSchema,
+  type CreatePostBody,
+  type GetPostByIdParams,
+} from './posts/schemas'
+
+declare module 'fastify' {
+  export interface FastifyInstance {
+    authenticate: FastifyAuthFunction
+  }
+}
 
 const fastify = Fastify({
-	logger:
-		process.env.NODE_ENV === 'production'
-			? true
-			: {
-				transport: {
-					target: 'pino-pretty',
-					options: {
-						translateTime: 'SYS:standard',
-						ignore: 'pid,hostname',
-					},
-				},
-			},
+  logger:
+    process.env.NODE_ENV === 'production'
+      ? true
+      : {
+        transport: {
+          target: 'pino-pretty',
+          options: {
+            translateTime: 'SYS:standard',
+            ignore: 'pid,hostname',
+          },
+        },
+      },
 })
 
-// Add schema validator and serializer
-fastify.setValidatorCompiler(validatorCompiler)
-fastify.setSerializerCompiler(serializerCompiler)
+fastify
+  .decorate('authenticate', async function(request: FastifyRequest, _reply: FastifyReply) {
+    const { authorization } = request.headers
 
-fastify.get('/', async (_request, reply) => {
-	reply.type('application/json').code(200)
-	return { hello: 'world' }
-})
+    const base64string = authorization?.split('Basic ')?.[1]
 
-fastify.get('/users', async (_request, reply) => {
-	const results = findAllUsers()
+    if (!base64string) {
+      throw new Error('missing authorization header')
+    }
 
-	return reply.code(200).send(results)
-})
+    const bufferObj = Buffer.from(base64string, 'base64')
+    const decodedString = bufferObj.toString('utf8')
 
-fastify.withTypeProvider<ZodTypeProvider>().get(
-	'/users/:id',
-	{
-		schema: {
-			params: z.object({
-				id: z.string(),
-			}),
-		},
-	},
-	async (request, reply) => {
-		const result = findUserById(Number(request.params.id))
+    const delimiter = ':'
+    const [username, ...restOfPassword] = decodedString.split(delimiter)
+    const password = restOfPassword.join(delimiter)
 
-		if (result) {
-			return reply.code(200).send(result)
-		}
+    const user = findUserByUsername(username)
 
-		return reply.code(404).send({})
-	}
-)
+    if (!user) {
+      throw new Error('user cannot be found')
+    }
 
-fastify.withTypeProvider<ZodTypeProvider>().post(
-	'/users',
-	{
-		schema: {
-			body: z.object({
-				username: z.string(),
-				password: z.string(),
-			}),
-		},
-	},
-	async (request, reply) => {
-		const result = await createUser({ username: request.body.username, password: request.body.username })
-		return reply.code(201).send(result)
-	}
-)
+    if (!user.password) {
+      throw new Error('user did not complete registration')
+    }
 
-fastify.get('/posts', async (_request, reply) => {
-	const results = findAllPosts()
+    if (!(await argon2.verify(user.password, password))) {
+      throw new Error('invalid password')
+    }
+  })
+  .register(fastifyAuth)
+  .after(() => {
+    fastify.get('/', async (_request, reply) => {
+      reply.type('application/json').code(200)
+      return { hello: 'world' }
+    })
 
-	return reply.code(200).send(results)
-})
+    fastify.get(
+      '/users',
+      {
+        onRequest: fastify.auth([fastify.authenticate]),
+      },
+      async (_request, reply) => {
+        const results = findAllUsers()
 
-fastify.withTypeProvider<ZodTypeProvider>().get(
-	'/posts/:id',
-	{
-		schema: {
-			params: z.object({
-				id: z.string(),
-			}),
-		},
-	},
-	async (request, reply) => {
-		const result = findPostById(Number(request.params.id))
+        return reply.code(200).send(results)
+      }
+    )
 
-		if (result) {
-			return reply.code(200).send(result)
-		}
+    fastify.get<{ Params: GetUserByIdParams }>(
+      '/users/:id',
+      {
+        schema: getUserByIdJsonSchema,
+        onRequest: fastify.auth([fastify.authenticate]),
+      },
+      async (request: FastifyRequest<{ Params: GetUserByIdParams }>, reply: FastifyReply) => {
+        const result = findUserById(Number(request.params.id))
 
-		return reply.code(404).send({})
-	}
-)
+        if (result) {
+          return reply.code(200).send(result)
+        }
 
-fastify.withTypeProvider<ZodTypeProvider>().post(
-	'/posts',
-	{
-		schema: {
-			body: z.object({
-				message: z.string(),
-			}),
-		},
-	},
-	async (request, reply) => {
-		const result = createPost({ message: request.body.message })
-		return reply.code(201).send(result)
-	}
-)
+        return reply.code(404).send({})
+      }
+    )
+
+    fastify.post<{ Body: CreateUserBody }>(
+      '/users',
+      {
+        schema: createUserJsonSchema,
+        onRequest: fastify.auth([fastify.authenticate]),
+      },
+      async (request: FastifyRequest<{ Body: CreateUserBody }>, reply: FastifyReply) => {
+        const result = await createUser({ username: request.body.username, password: request.body.username })
+        return reply.code(201).send(result)
+      }
+    )
+
+    fastify.get(
+      '/posts',
+      {
+        onRequest: fastify.auth([fastify.authenticate]),
+      },
+      async (_request, reply) => {
+        const results = findAllPosts()
+
+        return reply.code(200).send(results)
+      }
+    )
+
+    fastify.get<{ Params: GetPostByIdParams }>(
+      '/posts/:id',
+      {
+        schema: getPostByIdJsonSchema,
+        onRequest: fastify.auth([fastify.authenticate]),
+      },
+      async (request: FastifyRequest<{ Params: GetPostByIdParams }>, reply: FastifyReply) => {
+        const result = findPostById(Number(request.params.id))
+
+        if (result) {
+          return reply.code(200).send(result)
+        }
+
+        return reply.code(404).send({})
+      }
+    )
+
+    fastify.post<{ Body: CreatePostBody }>(
+      '/posts',
+      {
+        schema: createPostJsonSchema,
+        onRequest: fastify.auth([fastify.authenticate]),
+      },
+      async (request: FastifyRequest<{ Body: CreatePostBody }>, reply: FastifyReply) => {
+        const result = createPost({ message: request.body.message })
+        return reply.code(201).send(result)
+      }
+    )
+  })
 
 fastify.listen({ port: 3000 }, (err, _address) => {
-	if (err) throw err
-	// Server is now listening on ${address}
+  if (err) throw err
+  // Server is now listening on ${address}
 })

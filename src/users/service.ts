@@ -5,7 +5,20 @@ import { db } from '../db'
 import { users } from '../db/schema'
 
 export function findUserById(id: number) {
-	return db.select().from(users).where(eq(users.id, id)).get()
+	return db
+		.select({
+			id: users.id,
+			username: users.username,
+			createdAt: users.createdAt,
+			updatedAt: users.updatedAt,
+		})
+		.from(users)
+		.where(eq(users.id, id))
+		.get()
+}
+
+export function findUserByUsername(username: string) {
+	return db.select().from(users).where(eq(users.username, username)).get()
 }
 
 export function findAllUsers() {
