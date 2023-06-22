@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm'
 import { db } from './index'
 
-import { createUser } from '../users/service'
+import { createUser } from '../users/services'
 	; (async () => {
 		db.run(sql`DELETE FROM posts`)
 		db.run(sql`DELETE FROM users`)

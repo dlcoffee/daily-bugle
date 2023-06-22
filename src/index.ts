@@ -2,8 +2,8 @@ import Fastify, { FastifyRequest, FastifyReply } from 'fastify'
 import fastifyAuth, { FastifyAuthFunction } from '@fastify/auth'
 import * as argon2 from 'argon2'
 
-import { findPostById, findAllPosts, createPost } from './posts/service'
-import { findUserByUsername, findUserById, findAllUsers, createUser } from './users/service'
+import { findPostById, findAllPosts, createPost } from './posts/services'
+import { findUserByUsername, findUserById, findAllUsers, createUser } from './users/services'
 
 import {
   getUserByIdJsonSchema,
