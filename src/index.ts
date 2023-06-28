@@ -1,9 +1,12 @@
 import Fastify, { FastifyRequest, FastifyReply } from 'fastify'
 import fastifyAuth, { FastifyAuthFunction } from '@fastify/auth'
+import { subject } from '@casl/ability'
 import * as argon2 from 'argon2'
 
-import { findPostById, findAllPosts, createPost } from './posts/services'
+import { type User } from './db/schema'
+import { findPostById, findAllPosts, createPost, updatePost } from './posts/services'
 import { findUserByUsername, findUserById, findAllUsers, createUser } from './users/services'
+import definiteAbilityFor from './users/ability'
 
 import {
   getUserByIdJsonSchema,
@@ -15,13 +18,20 @@ import {
 import {
   getPostByIdJsonSchema,
   createPostJsonSchema,
+  patchPostByIdJsonSchema,
   type CreatePostBody,
   type GetPostByIdParams,
+  type PatchPostByIdParams,
+  type PatchPostByIdBody,
 } from './posts/schemas'
 
 declare module 'fastify' {
   export interface FastifyInstance {
     authenticate: FastifyAuthFunction
+  }
+
+  interface FastifyRequest {
+    user?: User
   }
 }
 
@@ -41,6 +51,7 @@ const fastify = Fastify({
 })
 
 fastify
+  .decorateRequest('user', null)
   .decorate('authenticate', async function (request: FastifyRequest, _reply: FastifyReply) {
     const { authorization } = request.headers
 
@@ -70,6 +81,8 @@ fastify
     if (!(await argon2.verify(user.password, password))) {
       throw new Error('invalid password')
     }
+
+    request.user = user
   })
   .register(fastifyAuth)
   .after(() => {
@@ -138,10 +151,10 @@ fastify
         onRequest: fastify.auth([fastify.authenticate]),
       },
       async (request: FastifyRequest<{ Params: GetPostByIdParams }>, reply: FastifyReply) => {
-        const result = findPostById(Number(request.params.id))
+        const post = findPostById(Number(request.params.id))
 
-        if (result) {
-          return reply.code(200).send(result)
+        if (post) {
+          return reply.code(200).send(post)
         }
 
         return reply.code(404).send({})
@@ -157,6 +170,38 @@ fastify
       async (request: FastifyRequest<{ Body: CreatePostBody }>, reply: FastifyReply) => {
         const result = createPost({ message: request.body.message })
         return reply.code(201).send(result)
+      }
+    )
+
+    fastify.patch<{ Body: PatchPostByIdBody; Params: PatchPostByIdParams }>(
+      '/posts/:id',
+      {
+        schema: patchPostByIdJsonSchema,
+        onRequest: fastify.auth([fastify.authenticate]),
+      },
+      async (
+        request: FastifyRequest<{ Body: PatchPostByIdBody; Params: PatchPostByIdParams }>,
+        reply: FastifyReply
+      ) => {
+        const user = request.user
+
+        if (!user) {
+          return reply.code(403).send({})
+        }
+
+        const ability = definiteAbilityFor(user)
+        let post = findPostById(Number(request.params.id))
+
+        // this is an example of resource level checks.
+        // NOTE: `subject` is required here because we're dealing with POJO
+        if (ability.cannot('update', subject('Post', post))) {
+          return reply.code(403).send({})
+        }
+
+        updatePost(post.id, request.body.message)
+        post = findPostById(post.id)
+
+        return reply.code(200).send(post)
       }
     )
   })

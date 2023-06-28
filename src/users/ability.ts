@@ -24,8 +24,6 @@ export default function definiteAbilityFor(user?: User) {
   can('read', 'Post')
 
   if (user) {
-    can('update', 'Post', { authorId: user.id })
-
     // a user can update their own post
     can('update', 'Post', { authorId: user.id })
 

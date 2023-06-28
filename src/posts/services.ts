@@ -17,3 +17,7 @@ export function createPost(values: NewPost) {
   // note: return value is `values`, not a freshly pulled record (timestamps wont be returned)
   return db.insert(posts).values(values).returning().get()
 }
+
+export function updatePost(id: number, message: string) {
+  return db.update(posts).set({ message }).where(eq(posts.id, id)).run()
+}
