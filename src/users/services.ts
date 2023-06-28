@@ -22,7 +22,15 @@ export function findUserByUsername(username: string) {
 }
 
 export function findAllUsers() {
-  return db.select().from(users).all()
+  return db
+    .select({
+      id: users.id,
+      username: users.username,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+    })
+    .from(users)
+    .all()
 }
 
 type NewUser = InferModel<typeof users, 'insert'> & { password: string } // tbd: is this the right approach?

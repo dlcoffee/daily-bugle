@@ -30,18 +30,18 @@ const fastify = Fastify({
     process.env.NODE_ENV === 'production'
       ? true
       : {
-        transport: {
-          target: 'pino-pretty',
-          options: {
-            translateTime: 'SYS:standard',
-            ignore: 'pid,hostname',
+          transport: {
+            target: 'pino-pretty',
+            options: {
+              translateTime: 'SYS:standard',
+              ignore: 'pid,hostname',
+            },
           },
         },
-      },
 })
 
 fastify
-  .decorate('authenticate', async function(request: FastifyRequest, _reply: FastifyReply) {
+  .decorate('authenticate', async function (request: FastifyRequest, _reply: FastifyReply) {
     const { authorization } = request.headers
 
     const base64string = authorization?.split('Basic ')?.[1]

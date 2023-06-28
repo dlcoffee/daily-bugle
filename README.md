@@ -63,3 +63,13 @@ javascript.
 ### zod-to-json-schema
 
 didn't want to deal with weird plugin stuff with fastify
+
+### CASL
+
+an isomorphic authz library (can be used in browser and node.js environments). it is written in typescript.
+
+`createMongoAbility` - not sure why it's named this way. it's "mongo" syntax: https://casl.js.org/v6/en/guide/conditions-in-depth#mongo-db-and-its-query-language. it creates an instance of `PureAbility` with mongo-like conditions.
+
+it's very class heavy, requiring you to either adopt classes or mess around with `ForcedSubject` types. take a look at: https://casl.js.org/v6/en/package/casl-prisma#note-on-subject-helper.
+
+the docs aren't very good.
