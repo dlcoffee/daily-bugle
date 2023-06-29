@@ -14,6 +14,8 @@ testing out authorization. it'll most likely be API-only. may set up tests if i'
 ```
 src/ # source code (typescript)
   db/ # database configuration
+  users/ # users domain
+  posts/ # posts domain
   index.ts # server config
 migrations/ # drizzle-kit generated migration files
 ```
@@ -36,29 +38,17 @@ npm run db:seed
 
 ### drizzle-orm
 
-use sqlite for fun. plus i don't have to set up postgres.
-
-trying out `drizzle-kit` as well for migrations.
+- responsible for the "orm" functionality.
+- use sqlite for fun. plus i don't have to set up postgres.
 
 docs: https://github.com/drizzle-team/drizzle-orm/blob/main/drizzle-orm/src/sqlite-core/README.md
 
 ### drizzle-kit
 
-looks like `push` just got released: https://github.com/drizzle-team/drizzle-kit-mirror/releases/tag/v0.19.0
-
-```bash
-## generate migration based on schema into the migrations/ directory
-npm run db:generate
-
-## actually run migrations
-npm run db:migrate
-
-## used for prototyping on a branch. once it looks good, use generate to create the migration
-npm run db:push
-```
-
-looks like because migrations are in sql, there's no worry about whether the migration is typescript
-javascript.
+- handles migrations and "push" commands
+- looks like because migrations are in sql, there's no worry about whether the migration is typescript
+  javascript.
+- looks like `push` for sqlite just got released: https://github.com/drizzle-team/drizzle-kit-mirror/releases/tag/v0.19.0
 
 ### zod-to-json-schema
 
@@ -68,8 +58,44 @@ didn't want to deal with weird plugin stuff with fastify
 
 an isomorphic authz library (can be used in browser and node.js environments). it is written in typescript.
 
-`createMongoAbility` - not sure why it's named this way. it's "mongo" syntax: https://casl.js.org/v6/en/guide/conditions-in-depth#mongo-db-and-its-query-language. it creates an instance of `PureAbility` with mongo-like conditions.
-
 it's very class heavy, requiring you to either adopt classes or mess around with `ForcedSubject` types. take a look at: https://casl.js.org/v6/en/package/casl-prisma#note-on-subject-helper.
 
-the docs aren't very good.
+**maybe** instead of mucking around with constructor naming or adding a new column, a typed id can be
+leveraged to infer the type: https://github.com/jetpack-io/typeid.
+
+the docs have important information hidden around pages.
+
+- ABAC approach (you can still use roles if you want)
+- the `can` is a confusing API because there are actually 2. (1) for a definition, and (2) for a question.
+
+```js
+import { AbilityBuilder, createMongoAbility } from '@casl/ability'
+
+// define abilities
+const { can: allow, cannot: forbid, build } = new AbilityBuilder(createMongoAbility)
+
+allow('read', 'Post')
+forbid('read', 'Post', { private: true })
+
+const ability = build()
+
+// check abilities
+ability.can('read', 'Post')
+```
+
+- `createMongoAbility` returns an instance of `PureAbility` with "mongo-like" conditions. see https://casl.js.org/v6/en/guide/conditions-in-depth#mongo-db-and-its-query-language. this seems to be the preferred/default way of using the library.
+- `defineAbility` creates a `MongoAbility` instance
+
+```js
+import { defineAbility, createMongoAbility } from '@casl/ability'
+
+const t1 = createMongoAbility([{ action: 'read', subject: 'Post' }])
+
+console.log('t1 can?', t1.can('read', 'Post'))
+
+const t2 = defineAbility((can) => {
+  can('read', 'Post')
+})
+
+console.log('t2 can?', t2.can('read', 'Post'))
+```

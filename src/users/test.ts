@@ -1,4 +1,4 @@
-import { AbilityBuilder, Ability, MongoAbility, createMongoAbility, subject, ForcedSubject } from '@casl/ability'
+import { AbilityBuilder, MongoAbility, createMongoAbility, subject, ForcedSubject } from '@casl/ability'
 
 type Actions = 'create' | 'read' | 'update' | 'delete'
 type Subjects = 'Article' | 'Comment' | 'User'
