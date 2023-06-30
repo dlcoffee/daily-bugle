@@ -1,4 +1,4 @@
-import { defineAbility, AbilityBuilder, MongoAbility, ForcedSubject, createMongoAbility } from '@casl/ability'
+import { AbilityBuilder, MongoAbility, ForcedSubject, createMongoAbility } from '@casl/ability'
 import { type User, type Post } from '../db/schema'
 
 type Actions = 'create' | 'read' | 'update' | 'delete'

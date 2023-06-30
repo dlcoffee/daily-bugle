@@ -11,7 +11,7 @@ const ability = createMongoAbility<[Actions, Subjects]>() // this create a "Mong
 
 ability.can('create', 'Article')
 
-const test = new AbilityBuilder<MAbility>(createMongoAbility)
+const _test = new AbilityBuilder<MAbility>(createMongoAbility)
 
 // createMongoAbility === defineAbility????
 

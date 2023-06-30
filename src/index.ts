@@ -109,8 +109,21 @@ fastify
         schema: getUserByIdJsonSchema,
         onRequest: fastify.auth([fastify.authenticate]),
       },
-      async (request: FastifyRequest<{ Params: GetUserByIdParams }>, reply: FastifyReply) => {
+      async (request, reply) => {
+        const user = request.user
+
+        if (!user) {
+          return reply.code(403).send({})
+        }
+
+        const ability = definiteAbilityFor(user)
         const result = findUserById(Number(request.params.id))
+
+        // this is an example of resource level checks.
+        // NOTE: `subject` is required here because we're dealing with POJO
+        if (ability.cannot('read', subject('User', result))) {
+          return reply.code(403).send({})
+        }
 
         if (result) {
           return reply.code(200).send(result)
@@ -126,7 +139,19 @@ fastify
         schema: createUserJsonSchema,
         onRequest: fastify.auth([fastify.authenticate]),
       },
-      async (request: FastifyRequest<{ Body: CreateUserBody }>, reply: FastifyReply) => {
+      async (request, reply) => {
+        const user = request.user
+
+        if (!user) {
+          return reply.code(403).send({})
+        }
+
+        const ability = definiteAbilityFor(user)
+
+        if (ability.cannot('create', 'User')) {
+          return reply.code(403).send({})
+        }
+
         const result = await createUser({ username: request.body.username, password: request.body.username })
         return reply.code(201).send(result)
       }
@@ -150,7 +175,7 @@ fastify
         schema: getPostByIdJsonSchema,
         onRequest: fastify.auth([fastify.authenticate]),
       },
-      async (request: FastifyRequest<{ Params: GetPostByIdParams }>, reply: FastifyReply) => {
+      async (request, reply) => {
         const user = request.user
 
         if (!user) {
@@ -180,7 +205,7 @@ fastify
         schema: createPostJsonSchema,
         onRequest: fastify.auth([fastify.authenticate]),
       },
-      async (request: FastifyRequest<{ Body: CreatePostBody }>, reply: FastifyReply) => {
+      async (request, reply) => {
         const user = request.user
 
         if (!user) {
@@ -193,7 +218,7 @@ fastify
           return reply.code(403).send({})
         }
 
-        const result = createPost({ message: request.body.message })
+        const result = createPost({ message: request.body.message, authorId: user.id })
         return reply.code(201).send(result)
       }
     )
@@ -204,10 +229,7 @@ fastify
         schema: patchPostByIdJsonSchema,
         onRequest: fastify.auth([fastify.authenticate]),
       },
-      async (
-        request: FastifyRequest<{ Body: PatchPostByIdBody; Params: PatchPostByIdParams }>,
-        reply: FastifyReply
-      ) => {
+      async (request, reply) => {
         const user = request.user
 
         if (!user) {

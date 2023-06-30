@@ -23,13 +23,17 @@ migrations/ # drizzle-kit generated migration files
 ## how to run
 
 ```bash
+# create a local sqlite db
+touch ./app.db
+
+# install dependencies
 npm install
 
 ## tbd: create the migrations
-npm run db:migrate
+# npm run db:migrate
 
 ## alternatively, just push
-# npm run db:push
+npm run db:push
 
 ## generate fake data for messing around
 npm run db:seed
