@@ -26,6 +26,7 @@ export const users = sqliteTable('users', {
   id: integer('id').primaryKey(), // 'id' is the column name
   username: text('username').notNull(),
   password: text('password'),
+  permissions: text('permissions'),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
