@@ -11,6 +11,8 @@ export const createPostJsonSchema = {
   body: zodToJsonSchema(createPostBodySchema, 'createPostBodySchema'),
 }
 
+///////////////////////////////////////////////////////////////////////////////
+
 const getPostByIdParamsSchema = z.object({
   id: z.string(),
 })
@@ -20,6 +22,8 @@ export type GetPostByIdParams = z.infer<typeof getPostByIdParamsSchema>
 export const getPostByIdJsonSchema = {
   params: zodToJsonSchema(getPostByIdParamsSchema, 'getPostByIdParamsSchema'),
 }
+
+///////////////////////////////////////////////////////////////////////////////
 
 const patchPostByIdParamsSchema = z.object({
   id: z.string(),

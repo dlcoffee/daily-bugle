@@ -3,9 +3,19 @@ import { type User, type Post } from '../db/schema'
 
 type Actions = 'create' | 'read' | 'update' | 'delete'
 
-// drizzle just gives us "POJO" objects.
-// it's also not possible to "hook" into drizzle to help out CASL by setting a custom field automatically,
-// so the best solution is to use the `subject` helper.
+// Q: how will CASL work if we've got these attributes?
+// export const PERMISSIONS = [
+//   'system_admin',
+//   'posts.create',
+//   'posts.read',
+//   'posts.update',
+//   'posts.delete',
+//   'users.create',
+//   'users.read',
+//   'users.update',
+//   'users.delete',
+// ] as const
+
 type Subjects =
   | 'User'
   | ForcedSubject<'User'>
@@ -15,11 +25,13 @@ type Subjects =
   | Post
   | 'Post'
 
-type Ability = MongoAbility<[Actions, Subjects]>
-
 export default function definiteAbilityFor(user?: User) {
-  const { can, build } = new AbilityBuilder<Ability>(createMongoAbility)
+  // defining rules via the `AbilityBuilder` is the preferred DSL. by passing in `createMongoAbility`,
+  // we get an instance of a `MongoAbility`, which is an instance of `PureAbility` with mongo rule
+  // syntax
+  const { can, build } = new AbilityBuilder<MongoAbility<[Actions, Subjects]>>(createMongoAbility)
 
+  // part 1: using the `Subject` as a second parameter.
   // anyone can read a post
   can('read', 'Post')
 
@@ -32,9 +44,14 @@ export default function definiteAbilityFor(user?: User) {
 
     // a user can delete their own post
     can('delete', 'Post', { authorId: user.id })
-
-    // can('read', 'User') // for admins
   }
+
+  // part 2: using existing permissions on the user
+  // if (user) {
+  // 	if (user.permissions.includes('users.create') {
+  // 		can('create', 'User')
+  // 	}
+  // }
 
   return build()
 }
