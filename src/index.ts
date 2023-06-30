@@ -151,7 +151,20 @@ fastify
         onRequest: fastify.auth([fastify.authenticate]),
       },
       async (request: FastifyRequest<{ Params: GetPostByIdParams }>, reply: FastifyReply) => {
+        const user = request.user
+
+        if (!user) {
+          return reply.code(403).send({})
+        }
+
+        const ability = definiteAbilityFor(user)
         const post = findPostById(Number(request.params.id))
+
+        // this is an example of resource level checks.
+        // NOTE: `subject` is required here because we're dealing with POJO
+        if (ability.cannot('read', subject('Post', post))) {
+          return reply.code(403).send({})
+        }
 
         if (post) {
           return reply.code(200).send(post)
@@ -168,6 +181,18 @@ fastify
         onRequest: fastify.auth([fastify.authenticate]),
       },
       async (request: FastifyRequest<{ Body: CreatePostBody }>, reply: FastifyReply) => {
+        const user = request.user
+
+        if (!user) {
+          return reply.code(403).send({})
+        }
+
+        const ability = definiteAbilityFor(user)
+
+        if (ability.cannot('create', 'Post')) {
+          return reply.code(403).send({})
+        }
+
         const result = createPost({ message: request.body.message })
         return reply.code(201).send(result)
       }
